@@ -104,7 +104,7 @@ const cards: CardData[] = [
       url: 'site.com/profile?id=',
       defaultUrlParam: '105',
       placeholder: '',
-      mode: 'url' // New mode for URL bar editing
+      mode: 'url' 
     },
     checkWin: (input) => input.trim() === '1'
   },
@@ -177,7 +177,7 @@ const cards: CardData[] = [
 // --- Components ---
 
 const GuideBubble = ({ text }: { text: string }) => (
-  <div className="absolute -top-14 left-0 z-10 animate-bounce">
+  <div className="absolute -top-14 left-0 z-10 animate-bounce pointer-events-none">
     <div className="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-bold shadow-lg whitespace-nowrap border border-blue-400">
       Type: <span className="font-mono bg-black/20 px-1 rounded ml-1 text-yellow-300">{text}</span>
     </div>
@@ -186,13 +186,13 @@ const GuideBubble = ({ text }: { text: string }) => (
 );
 
 const ConsequenceOverlay = ({ children, onNext }: { children: React.ReactNode, onNext: () => void }) => (
-  <div className="absolute inset-0 bg-slate-900/95 z-50 flex flex-col items-center justify-center p-6 animate-fade-in text-center">
-    <div className="mb-6 w-full max-w-md">
+  <div className="absolute inset-0 bg-slate-900/95 z-50 flex flex-col items-center justify-center p-6 animate-fade-in text-center overflow-y-auto">
+    <div className="mb-6 w-full max-w-md shrink-0">
       {children}
     </div>
     <button 
       onClick={onNext}
-      className="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded-full font-bold shadow-lg shadow-green-900/40 flex items-center gap-2 animate-bounce-subtle"
+      className="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded-full font-bold shadow-lg shadow-green-900/40 flex items-center gap-2 animate-bounce-subtle shrink-0"
     >
       Analyze Result <ChevronRight size={18} />
     </button>
@@ -221,9 +221,9 @@ const TerminalSim = ({ card, onComplete }: { card: CardData; onComplete: () => v
     } else if (cmd === 'clear') {
       setHistory([]);
     } else if (card.checkWin(cmd)) {
-      if (card.id === 7) { // Password Cracking
+      if (card.id === 7) { 
           setHistory(prev => [...prev, `> Loaded 1 password hash...`, `> Press 'q' to quit`, `> Probing candidates...`]);
-      } else if (card.id === 9) { // MitM
+      } else if (card.id === 9) {
           setHistory(prev => [...prev, `> Listening on eth0...`, `> Capture size 262144 bytes`]);
       } else {
           setHistory(prev => [...prev, `> Executing...`]);
@@ -236,7 +236,7 @@ const TerminalSim = ({ card, onComplete }: { card: CardData; onComplete: () => v
   };
 
   return (
-    <div className="relative h-80 flex flex-col">
+    <div className="relative h-[450px] flex flex-col">
        <div className="bg-slate-950 border-b border-green-900 p-2 text-xs font-mono text-green-600 flex justify-between">
           <span>TERM_SESSION: {phase === 'input' ? 'ACTIVE' : 'COMPLETE'}</span>
           <span>CTX: {card.simData.targetIp}</span>
@@ -268,7 +268,6 @@ const TerminalSim = ({ card, onComplete }: { card: CardData; onComplete: () => v
         <ConsequenceOverlay onNext={onComplete}>
           <div className="bg-black border border-green-500 rounded p-4 font-mono text-left mb-4 overflow-hidden">
              {card.id === 2 ? (
-                // DoS
                 <>
                     <div className="text-red-500 font-bold mb-2">SERVER STATUS: CRITICAL</div>
                     <div className="text-xs text-red-400">
@@ -277,7 +276,6 @@ const TerminalSim = ({ card, onComplete }: { card: CardData; onComplete: () => v
                     </div>
                 </>
              ) : card.id === 7 ? (
-                // Password Crack
                 <>
                     <div className="text-green-500 mb-2">SESSION COMPLETE</div>
                     <div className="text-xs text-slate-300">
@@ -287,7 +285,6 @@ const TerminalSim = ({ card, onComplete }: { card: CardData; onComplete: () => v
                     </div>
                 </>
              ) : card.id === 9 ? (
-                 // MitM
                 <>
                     <div className="text-green-500 mb-2">PACKET CAPTURED</div>
                     <div className="text-xs text-slate-300">
@@ -297,7 +294,6 @@ const TerminalSim = ({ card, onComplete }: { card: CardData; onComplete: () => v
                     </div>
                 </>
              ) : (
-                 // Generic
                  <div className="text-green-500">Command Successful</div>
              )}
           </div>
@@ -312,9 +308,16 @@ const InjectorSim = ({ card, onComplete }: { card: CardData; onComplete: () => v
   const [val, setVal] = useState(card.simData.defaultUrlParam || '');
   const [phase, setPhase] = useState<'input' | 'consequence'>('input');
   const [shaking, setShaking] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const isUrlMode = card.simData.mode === 'url';
   
+  // Reset state when card changes
+  useEffect(() => {
+    setVal(card.simData.defaultUrlParam || '');
+    setPhase('input');
+  }, [card]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (card.checkWin(val)) {
@@ -326,8 +329,12 @@ const InjectorSim = ({ card, onComplete }: { card: CardData; onComplete: () => v
     }
   };
 
+  const handleContainerClick = () => {
+    inputRef.current?.focus();
+  };
+
   return (
-    <div className="relative h-80 flex flex-col bg-gray-100 rounded-lg overflow-hidden border border-gray-300 shadow-md">
+    <div className="relative h-[450px] flex flex-col bg-gray-100 rounded-lg overflow-hidden border border-gray-300 shadow-md">
       
       {/* Live Hacker Vision */}
       <div className="bg-slate-800 text-slate-300 p-3 text-xs font-mono border-b border-slate-600">
@@ -336,22 +343,18 @@ const InjectorSim = ({ card, onComplete }: { card: CardData; onComplete: () => v
         </div>
         <div className="bg-black/50 p-2 rounded text-gray-400 break-all h-16 overflow-y-auto">
           {card.id === 6 ? (
-              // Command Injection
                <>
                $ ping -c 1 <span className="text-white font-bold">{val}</span>
                </>
           ) : isUrlMode ? (
-              // IDOR
                <>
                GET /profile?id=<span className="text-white font-bold">{val}</span> HTTP/1.1
                </>
           ) : card.title.includes('SQL') ? (
-            // SQL
             <>
               SELECT * FROM users WHERE pass = '<span className="text-white font-bold">{val}</span>'
             </>
           ) : (
-            // XSS
             <>
               &lt;div&gt;Results for: <span className="text-white font-bold">{val}</span>&lt;/div&gt;
             </>
@@ -368,18 +371,24 @@ const InjectorSim = ({ card, onComplete }: { card: CardData; onComplete: () => v
         </div>
         
         {isUrlMode ? (
-            <div className="flex-1 relative">
-                <div className="absolute left-0 top-0 bottom-0 bg-white border border-gray-300 rounded-l flex items-center px-2 text-xs text-gray-500 font-mono">
+            <div 
+                className="flex-1 flex items-center border border-gray-300 rounded bg-white overflow-hidden relative cursor-text"
+                onClick={handleContainerClick}
+            >
+                {/* Prefix */}
+                <div className="bg-gray-50 px-3 py-1 text-xs text-gray-500 font-mono border-r border-gray-200 whitespace-nowrap select-none">
                     https://{card.simData.url}
                 </div>
-                <form onSubmit={handleSubmit}>
+                {/* Flexible Input */}
+                <form onSubmit={handleSubmit} className="flex-1 relative">
+                    {phase === 'input' && <GuideBubble text={card.solution} />}
                     <input 
+                        ref={inputRef}
                         value={val}
                         onChange={(e) => setVal(e.target.value)}
-                        className={`w-full pl-[140px] pr-2 py-1 text-xs font-mono rounded border ${shaking ? 'border-red-500 animate-shake' : 'border-gray-300'} focus:outline-none focus:border-blue-500`}
+                        className={`w-full px-2 py-1 text-xs font-mono focus:outline-none text-black ${shaking ? 'bg-red-50' : 'bg-white'}`}
                         autoFocus
                     />
-                     {phase === 'input' && <div className="absolute top-8 left-20 z-50"><GuideBubble text={card.solution} /></div>}
                 </form>
             </div>
         ) : (
@@ -425,7 +434,6 @@ const InjectorSim = ({ card, onComplete }: { card: CardData; onComplete: () => v
       {phase === 'consequence' && (
         <ConsequenceOverlay onNext={onComplete}>
           {card.id === 6 ? (
-              // Command Injection Result
             <div className="bg-black text-green-400 p-4 rounded text-left font-mono text-xs overflow-y-auto max-h-40">
                 <div>&gt; PING 8.8.8.8 (8.8.8.8): 56 data bytes</div>
                 <div>64 bytes from 8.8.8.8: icmp_seq=0 ttl=114 time=22.1 ms</div>
@@ -435,7 +443,6 @@ const InjectorSim = ({ card, onComplete }: { card: CardData; onComplete: () => v
                 <div className="text-white">admin:x:1000:1000:admin:/home/admin:/bin/bash</div>
             </div>
           ) : isUrlMode ? (
-             // IDOR Result
              <div className="bg-white border border-gray-200 p-4 rounded text-left shadow-lg w-full">
                  <div className="flex items-center gap-4 mb-4 border-b pb-4">
                      <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
@@ -452,7 +459,6 @@ const InjectorSim = ({ card, onComplete }: { card: CardData; onComplete: () => v
                  </div>
              </div>
           ) : card.title.includes('SQL') ? (
-            // SQL Result (Existing)
             <div className="bg-white text-slate-900 rounded-lg shadow-xl overflow-hidden text-left text-xs font-mono border border-gray-300 w-full">
               <div className="bg-blue-600 text-white p-2 font-bold">Database Dump: users</div>
               <table className="w-full !text-black" style={{ color: '#000000' }}>
@@ -478,7 +484,6 @@ const InjectorSim = ({ card, onComplete }: { card: CardData; onComplete: () => v
               </div>
             </div>
           ) : (
-            // XSS Result (Existing)
             <div className="text-center">
               <div className="bg-white text-black p-4 rounded shadow-xl border border-gray-400 mb-4 transform scale-110">
                 <div className="font-bold mb-2">Alert</div>
@@ -506,7 +511,7 @@ const EmailSim = ({ card, onComplete }: { card: CardData; onComplete: () => void
     };
 
     return (
-        <div className="relative h-80 flex flex-col bg-white rounded-lg overflow-hidden border border-gray-300 shadow-md">
+        <div className="relative h-[500px] flex flex-col bg-white rounded-lg overflow-hidden border border-gray-300 shadow-md">
              {/* Fake Email Header */}
              <div className="bg-blue-600 p-3 text-white flex justify-between items-center">
                  <div className="flex items-center gap-2">
@@ -516,8 +521,8 @@ const EmailSim = ({ card, onComplete }: { card: CardData; onComplete: () => void
                  <div className="text-xs opacity-75">workmail.com</div>
              </div>
 
-             {/* Email Content */}
-             <div className="flex-1 p-6 text-gray-800 flex flex-col relative">
+             {/* Email Content - Added overflow-y-auto here */}
+             <div className="flex-1 p-6 text-gray-800 flex flex-col relative overflow-y-auto">
                 <div className="border-b pb-4 mb-4">
                     <div className="font-bold text-lg mb-1">{card.simData.subject}</div>
                     <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -529,11 +534,11 @@ const EmailSim = ({ card, onComplete }: { card: CardData; onComplete: () => void
                     </div>
                 </div>
                 
-                <div className="flex-1 text-sm leading-relaxed whitespace-pre-line">
+                <div className="text-sm leading-relaxed whitespace-pre-line mb-6">
                     {card.simData.body}
                 </div>
 
-                <div className="mt-4 flex justify-center relative">
+                <div className="flex justify-center relative pb-6">
                     {phase === 'input' && (
                         <div className="absolute -top-10 animate-bounce">
                            <div className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold">Click Here</div>
@@ -685,7 +690,7 @@ const SocialSim = ({ card, onComplete }: { card: CardData; onComplete: () => voi
       <div className="p-3 bg-gray-100 border-t border-gray-200 grid grid-cols-1 gap-2 relative z-20">
         {currentOptions.map((opt, idx) => (
           <div key={idx} className="relative">
-             {/* Guide arrow logic: Point to the 'best' option if we are in input phase */}
+             {/* Guide arrow logic */}
              {phase === 'input' && !processing && (
                  (trust < 40 && opt.id === 'RAPPORT') ||
                  (trust >= 40 && trust < 80 && opt.id === 'WORK') ||
@@ -876,10 +881,10 @@ export default function CyberSimCards() {
 
                 {/* The Interactive Module */}
                 <div className="mt-4 mb-2">
-                   {activeCard.type === 'terminal' && <TerminalSim card={activeCard} onComplete={handleNextPhase} />}
-                   {activeCard.type === 'injector' && <InjectorSim card={activeCard} onComplete={handleNextPhase} />}
-                   {activeCard.type === 'social' && <SocialSim card={activeCard} onComplete={handleNextPhase} />}
-                   {activeCard.type === 'email' && <EmailSim card={activeCard} onComplete={handleNextPhase} />}
+                   {activeCard.type === 'terminal' && <TerminalSim key={activeCard.id} card={activeCard} onComplete={handleNextPhase} />}
+                   {activeCard.type === 'injector' && <InjectorSim key={activeCard.id} card={activeCard} onComplete={handleNextPhase} />}
+                   {activeCard.type === 'social' && <SocialSim key={activeCard.id} card={activeCard} onComplete={handleNextPhase} />}
+                   {activeCard.type === 'email' && <EmailSim key={activeCard.id} card={activeCard} onComplete={handleNextPhase} />}
                 </div>
               </div>
               
