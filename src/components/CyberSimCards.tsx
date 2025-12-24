@@ -925,19 +925,16 @@ const MenuScreen = ({ cards, onSelect }: { cards: CardData[], onSelect: (card: C
 
 export default function CyberSimCards() {
   const [activeCard, setActiveCard] = useState<CardData | null>(null);
-  const [flipped, setFlipped] = useState(false);
   const [isSimulating, setIsSimulating] = useState(true);
 
   // When card is selected from menu
   const handleSelectCard = (card: CardData) => {
     setActiveCard(card);
-    setFlipped(false);
     setIsSimulating(true);
   };
 
   const handleNextPhase = () => {
     setIsSimulating(false);
-    setFlipped(true);
   };
 
   const returnToMenu = () => {
