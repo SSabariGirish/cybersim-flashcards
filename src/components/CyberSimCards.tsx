@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Shield, AlertTriangle, CheckCircle, ChevronRight, User, Activity, Code, Terminal, Lock, Menu as MenuIcon, ArrowLeft, Clock, Mail, FileText, Globe } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, ChevronRight, User, Code, Terminal, Lock, Menu as MenuIcon, ArrowLeft, Clock, Mail } from 'lucide-react';
 
 // Destructure hooks from the React namespace
 const { useState, useEffect, useRef } = React;
