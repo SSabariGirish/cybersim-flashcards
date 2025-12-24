@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Shield, AlertTriangle, CheckCircle, ChevronRight, User, Code, Terminal, Lock, Menu as MenuIcon, ArrowLeft, Clock, Mail } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, ChevronRight, User, Activity, Code, Terminal, Lock, Menu as MenuIcon, ArrowLeft, Clock, Mail, FileText, Globe } from 'lucide-react';
 
 // Destructure hooks from the React namespace
 const { useState, useEffect, useRef } = React;
@@ -21,7 +21,7 @@ interface CardData {
 
 // --- Data: The Flashcard Deck ---
 const cards: CardData[] = [
-  // --- EXISTING CARDS ---
+  // --- EXISTING CARDS (1-9) ---
   {
     id: 1,
     title: 'SQL Injection (SQLi)',
@@ -89,16 +89,13 @@ const cards: CardData[] = [
     },
     checkWin: (input) => input === 'URGENT'
   },
-
-  // --- NEW CARDS ---
-
   {
     id: 5,
     title: 'Broken Access (IDOR)',
     type: 'injector',
     difficulty: 'Easy',
     description: 'You are logged in as User 105. Modify the URL to access the CEO\'s profile (User 1).',
-    solution: "Change id=105 to id=1",
+    solution: "1", // Simplified solution hint
     explanation: "Insecure Direct Object References (IDOR) occur when an app exposes a reference to an internal object (like a database ID) without checking access control. You simply requested ID 1, and the server gave it to you.",
     simData: {
       url: 'site.com/profile?id=',
@@ -171,6 +168,85 @@ const cards: CardData[] = [
       targetIp: 'Network'
     },
     checkWin: (input) => input.toLowerCase().includes('tcpdump')
+  },
+
+  // --- NEW CARDS (10-14) ---
+
+  {
+    id: 10,
+    title: 'Directory Traversal',
+    type: 'injector',
+    difficulty: 'Medium',
+    description: 'The app retrieves files by name. Replace "report.pdf" with "dot-dot-slash" notation to read the password file.',
+    solution: "../../etc/passwd",
+    explanation: "Directory Traversal (or Path Traversal) vulnerabilities allow an attacker to access files outside of the intended folder. By using `../`, you navigated up the directory tree to the root and accessed sensitive system files.",
+    simData: {
+      url: 'cloud-store.com/view?file=',
+      defaultUrlParam: 'report.pdf',
+      placeholder: '',
+      mode: 'url'
+    },
+    checkWin: (input) => input.includes('..') && (input.includes('etc') || input.includes('passwd') || input.includes('secret'))
+  },
+  {
+    id: 11,
+    title: 'Parameter Tampering',
+    type: 'injector',
+    difficulty: 'Easy',
+    description: 'You are buying a $2000 Laptop. The price is hidden in the form data. Change it to pay $0.',
+    solution: "price=0",
+    explanation: "Never trust data sent from the client! The application relied on the browser to tell it how much to charge. By intercepting or editing the form data (Price: 2000 -> Price: 0), you bypassed the payment logic entirely.",
+    simData: {
+      url: 'shop-online.com/checkout',
+      placeholder: 'price=2000',
+      mode: 'form'
+    },
+    checkWin: (input) => {
+      const parts = input.split('=');
+      return parts.length > 1 && parseInt(parts[1]) < 10;
+    }
+  },
+  {
+    id: 12,
+    title: 'DNS Spoofing',
+    type: 'terminal',
+    difficulty: 'Hard',
+    description: 'Poison the network cache to redirect "bank.com" to your malicious IP (6.6.6.6).',
+    solution: "dnsspoof -i eth0",
+    explanation: "DNS Spoofing (or Cache Poisoning) involves feeding false DNS information to a cache. When legitimate users try to visit 'bank.com', their computer resolves it to your malicious IP address instead of the real one.",
+    simData: {
+      hostname: 'kali-linux:~#',
+      targetIp: 'Local LAN'
+    },
+    checkWin: (input) => input.toLowerCase().includes('dnsspoof')
+  },
+  {
+    id: 13,
+    title: 'Insider Threat',
+    type: 'social',
+    difficulty: 'Medium',
+    description: 'Target: Dave (SysAdmin). He hates his boss. Con him into selling his access credentials.',
+    solution: "Sympathize -> Bribe -> Get Credentials.",
+    explanation: "Not all hacks are digital. An 'Insider Threat' is a malicious employee who has legitimate access. Identifying unhappy employees and bribing or coercing them is a common tactic for APT groups and corporate spies.",
+    simData: {
+      targetName: 'Dave (SysAdmin)',
+      avatar: 'user'
+    },
+    checkWin: (input) => input === 'BRIBE'
+  },
+  {
+    id: 14,
+    title: 'Steganography',
+    type: 'terminal',
+    difficulty: 'Medium',
+    description: 'A secret message is hidden inside "innocent.jpg". Extract it.',
+    solution: "steghide extract -sf innocent.jpg",
+    explanation: "Steganography is the art of hiding data within other data. The text file was embedded inside the bits of the image file. To the naked eye, the image looks normal, but the tool reveals the hidden payload.",
+    simData: {
+      hostname: 'kali-linux:~#',
+      targetIp: 'Forensics'
+    },
+    checkWin: (input) => input.toLowerCase().includes('steghide') && input.toLowerCase().includes('extract')
   }
 ];
 
@@ -217,7 +293,7 @@ const TerminalSim = ({ card, onComplete }: { card: CardData; onComplete: () => v
     setHistory(prev => [...prev, `${card.simData.hostname} ${cmd}`]);
 
     if (cmd === 'help') {
-      setHistory(prev => [...prev, 'Available commands: ping, nmap, help, clear, john, tcpdump']);
+      setHistory(prev => [...prev, 'Available commands: ping, nmap, help, clear, john, tcpdump, dnsspoof, steghide']);
     } else if (cmd === 'clear') {
       setHistory([]);
     } else if (card.checkWin(cmd)) {
@@ -225,6 +301,10 @@ const TerminalSim = ({ card, onComplete }: { card: CardData; onComplete: () => v
           setHistory(prev => [...prev, `> Loaded 1 password hash...`, `> Press 'q' to quit`, `> Probing candidates...`]);
       } else if (card.id === 9) {
           setHistory(prev => [...prev, `> Listening on eth0...`, `> Capture size 262144 bytes`]);
+      } else if (card.id === 12) {
+          setHistory(prev => [...prev, `> dnsspoof: listening on eth0 [udp 53]`, `> 192.168.1.55 requested bank.com`, `> Spoofed response sent: 6.6.6.6`]);
+      } else if (card.id === 14) {
+          setHistory(prev => [...prev, `> Reading innocent.jpg...`, `> Extracting data...`, `> wrote extracted data to "secret_plans.txt"`]);
       } else {
           setHistory(prev => [...prev, `> Executing...`]);
       }
@@ -293,11 +373,29 @@ const TerminalSim = ({ card, onComplete }: { card: CardData; onComplete: () => v
                     <span className="text-yellow-400 font-bold bg-slate-800 p-1 block mt-2">Auth: admin:secret123</span>
                     </div>
                 </>
+             ) : card.id === 12 ? (
+                <>
+                    <div className="text-green-500 mb-2">DNS CACHE POISONED</div>
+                    <div className="text-xs text-slate-300">
+                    Target: bank.com<br/>
+                    Real IP: 203.0.113.1<br/>
+                    <span className="text-red-400 font-bold bg-slate-800 p-1 block mt-2">Spoofed IP: 6.6.6.6</span>
+                    </div>
+                </>
+             ) : card.id === 14 ? (
+                <>
+                    <div className="text-green-500 mb-2">DATA EXTRACTED</div>
+                    <div className="text-xs text-slate-300">
+                    Source: innocent.jpg<br/>
+                    Algorithm: Rijndael-128<br/>
+                    <span className="text-yellow-400 font-bold bg-slate-800 p-1 block mt-2">File: secret_plans.txt</span>
+                    </div>
+                </>
              ) : (
                  <div className="text-green-500">Command Successful</div>
              )}
           </div>
-          <p className="text-slate-300 text-sm">{card.id === 7 ? "Hash cracked successfully." : card.id === 9 ? "Credentials intercepted." : "Target crashed."}</p>
+          <p className="text-slate-300 text-sm">{card.id === 12 ? "Traffic redirected successfully." : "Operation successful."}</p>
         </ConsequenceOverlay>
       )}
     </div>
@@ -354,6 +452,10 @@ const InjectorSim = ({ card, onComplete }: { card: CardData; onComplete: () => v
             <>
               SELECT * FROM users WHERE pass = '<span className="text-white font-bold">{val}</span>'
             </>
+          ) : card.id === 11 ? (
+            <>
+              POST /checkout BODY: <span className="text-white font-bold">{val}</span>
+            </>
           ) : (
             <>
               &lt;div&gt;Results for: <span className="text-white font-bold">{val}</span>&lt;/div&gt;
@@ -372,11 +474,11 @@ const InjectorSim = ({ card, onComplete }: { card: CardData; onComplete: () => v
         
         {isUrlMode ? (
             <div 
-                className="flex-1 flex items-center border border-gray-300 rounded bg-white overflow-hidden relative cursor-text"
+                className="flex-1 flex items-center border border-gray-300 rounded bg-white relative cursor-text"
                 onClick={handleContainerClick}
             >
                 {/* Prefix */}
-                <div className="bg-gray-50 px-3 py-1 text-xs text-gray-500 font-mono border-r border-gray-200 whitespace-nowrap select-none">
+                <div className="bg-gray-50 px-3 py-1 text-xs text-gray-500 font-mono border-r border-gray-200 whitespace-nowrap select-none rounded-l">
                     https://{card.simData.url}
                 </div>
                 {/* Flexible Input */}
@@ -386,7 +488,7 @@ const InjectorSim = ({ card, onComplete }: { card: CardData; onComplete: () => v
                         ref={inputRef}
                         value={val}
                         onChange={(e) => setVal(e.target.value)}
-                        className={`w-full px-2 py-1 text-xs font-mono focus:outline-none text-black ${shaking ? 'bg-red-50' : 'bg-white'}`}
+                        className={`w-full px-2 py-1 text-xs font-mono focus:outline-none text-black rounded-r ${shaking ? 'bg-red-50' : 'bg-white'}`}
                         autoFocus
                     />
                 </form>
@@ -403,13 +505,22 @@ const InjectorSim = ({ card, onComplete }: { card: CardData; onComplete: () => v
         {isUrlMode ? (
              <div className="text-center text-gray-400">
                 <User size={64} className="mx-auto mb-4 opacity-20"/>
-                <p>Profile View: <span className="font-bold">User 105</span></p>
-                <p className="text-xs mt-2">Try changing the URL above.</p>
+                {card.id === 10 ? (
+                    <>
+                        <p>File Viewer: <span className="font-bold">report.pdf</span></p>
+                        <p className="text-xs mt-2">Access restricted to /public/files.</p>
+                    </>
+                ) : (
+                    <>
+                        <p>Profile View: <span className="font-bold">User 105</span></p>
+                        <p className="text-xs mt-2">Try changing the URL above.</p>
+                    </>
+                )}
              </div>
         ) : (
             <>
                 <h3 className="text-gray-700 font-bold mb-4 text-lg">
-                {card.title.includes('OS') ? 'Network Ping Tool' : card.title.includes('SQL') ? 'Secure Login' : 'Site Search'}
+                {card.title.includes('OS') ? 'Network Ping Tool' : card.title.includes('SQL') ? 'Secure Login' : card.id === 11 ? 'Checkout' : 'Site Search'}
                 </h3>
                 <form onSubmit={handleSubmit} className={`w-full max-w-xs flex flex-col gap-3 ${shaking ? 'animate-shake' : ''} relative`}>
                 <div className="relative">
@@ -424,7 +535,7 @@ const InjectorSim = ({ card, onComplete }: { card: CardData; onComplete: () => v
                     />
                 </div>
                 <button type="submit" className="bg-blue-600 text-white py-2 rounded font-semibold hover:bg-blue-700 transition-colors z-20">
-                    {card.title.includes('OS') ? 'Ping' : card.title.includes('SQL') ? 'Login' : 'Search'}
+                    {card.title.includes('OS') ? 'Ping' : card.title.includes('SQL') ? 'Login' : card.id === 11 ? 'Pay Now' : 'Search'}
                 </button>
                 </form>
             </>
@@ -442,6 +553,27 @@ const InjectorSim = ({ card, onComplete }: { card: CardData; onComplete: () => v
                 <div className="text-white">bin:x:1:1:bin:/bin:/sbin/nologin</div>
                 <div className="text-white">admin:x:1000:1000:admin:/home/admin:/bin/bash</div>
             </div>
+          ) : card.id === 10 ? (
+             <div className="bg-white border border-gray-200 p-4 rounded text-left shadow-lg w-full font-mono text-xs overflow-auto max-h-40">
+                 <div className="text-gray-500 mb-2"># /etc/passwd</div>
+                 <div>root:x:0:0:root:/root:/bin/bash</div>
+                 <div>daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin</div>
+                 <div>bin:x:2:2:bin:/bin:/usr/sbin/nologin</div>
+                 <div>sys:x:3:3:sys:/dev:/usr/sbin/nologin</div>
+                 <div className="bg-yellow-100 font-bold text-red-600">admin:x:1000:1000:admin:/home/admin:/bin/bash</div>
+             </div>
+          ) : card.id === 11 ? (
+             <div className="bg-white border border-gray-200 p-4 rounded text-left shadow-lg w-full text-black">
+                 <div className="text-center mb-4">
+                     <CheckCircle size={40} className="text-green-500 mx-auto mb-2" />
+                     <div className="text-xl font-bold">Payment Successful!</div>
+                 </div>
+                 <div className="space-y-2 border-t pt-4">
+                     <div className="flex justify-between font-bold"><span>Item:</span> <span>Gaming Laptop</span></div>
+                     <div className="flex justify-between"><span>Original Price:</span> <span className="line-through text-gray-400">$2000.00</span></div>
+                     <div className="flex justify-between font-bold text-lg text-green-600"><span>Charged:</span> <span>$0.00</span></div>
+                 </div>
+             </div>
           ) : isUrlMode ? (
              <div className="bg-white border border-gray-200 p-4 rounded text-left shadow-lg w-full">
                  <div className="flex items-center gap-4 mb-4 border-b pb-4">
@@ -793,16 +925,19 @@ const MenuScreen = ({ cards, onSelect }: { cards: CardData[], onSelect: (card: C
 
 export default function CyberSimCards() {
   const [activeCard, setActiveCard] = useState<CardData | null>(null);
+  const [flipped, setFlipped] = useState(false);
   const [isSimulating, setIsSimulating] = useState(true);
 
   // When card is selected from menu
   const handleSelectCard = (card: CardData) => {
     setActiveCard(card);
+    setFlipped(false);
     setIsSimulating(true);
   };
 
   const handleNextPhase = () => {
     setIsSimulating(false);
+    setFlipped(true);
   };
 
   const returnToMenu = () => {
@@ -930,6 +1065,11 @@ export default function CyberSimCards() {
                       {activeCard.id === 7 && "Use Strong, Unique Passwords and Salted Hashes."}
                       {activeCard.id === 8 && "Email Filters, Sandbox Attachments, and User Training."}
                       {activeCard.id === 9 && "Always use HTTPS/TLS to encrypt traffic."}
+                      {activeCard.id === 10 && "Sanitize paths and use a whitelist of allowed files."}
+                      {activeCard.id === 11 && "Validate data on the server-side, never trust the client."}
+                      {activeCard.id === 12 && "Use DNSSEC to verify DNS records."}
+                      {activeCard.id === 13 && "Implement least privilege and monitor anomalous activity."}
+                      {activeCard.id === 14 && "Scan uploads for hidden data and strip metadata."}
                     </div>
                   </div>
                    <div className="bg-slate-700/30 p-4 rounded border border-slate-700">
