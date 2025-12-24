@@ -64,7 +64,7 @@ const cards: CardData[] = [
     difficulty: 'Medium',
     description: 'This search page reflects input. Inject a script to trigger an alert.',
     solution: "<script>alert(1)</script>",
-    explanation: "Because the website didn't 'sanitize' your input (remove special characters), the browser interpreted your text as code. This allows attackers to steal session cookies or redirect users to phishing sites.",
+    explanation: "Because the website didn't 'sanitise' your input (remove special characters), the browser interpreted your text as code. This allows attackers to steal session cookies or redirect users to phishing sites.",
     simData: {
       url: 'shop-vulnerable.com/search',
       placeholder: 'Search products...',
@@ -89,6 +89,9 @@ const cards: CardData[] = [
     },
     checkWin: (input) => input === 'URGENT'
   },
+
+  // --- NEW CARDS ---
+
   {
     id: 5,
     title: 'Broken Access (IDOR)',
@@ -270,13 +273,13 @@ const ConsequenceOverlay = ({ children, onNext }: { children: React.ReactNode, o
       onClick={onNext}
       className="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded-full font-bold shadow-lg shadow-green-900/40 flex items-center gap-2 animate-bounce-subtle shrink-0"
     >
-      Analyze Result <ChevronRight size={18} />
+      Analyse Result <ChevronRight size={18} />
     </button>
   </div>
 );
 
 const TerminalSim = ({ card, onComplete }: { card: CardData; onComplete: () => void }) => {
-  const [history, setHistory] = useState<string[]>(['Initializing interface...']);
+  const [history, setHistory] = useState<string[]>(['Initialising interface...']);
   const [input, setInput] = useState('');
   const [phase, setPhase] = useState<'input' | 'consequence'>('input');
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -710,7 +713,10 @@ const SocialSim = ({ card, onComplete }: { card: CardData; onComplete: () => voi
   const [phase, setPhase] = useState<'input' | 'consequence'>('input');
   const [trust, setTrust] = useState(20);
   const [messages, setMessages] = useState<{sender: string, text: string}[]>([
-    { sender: 'Bob', text: 'Hey, did you need something? I am swamped.' }
+    { 
+      sender: card.id === 13 ? 'Dave' : 'Bob', 
+      text: card.id === 13 ? 'What do you want? I am busy fixing the server.' : 'Hey, did you need something? I am swamped.' 
+    }
   ]);
   const [processing, setProcessing] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -721,17 +727,36 @@ const SocialSim = ({ card, onComplete }: { card: CardData; onComplete: () => voi
 
   // Dynamic options based on trust level
   const getOptions = () => {
-    if (trust < 40) {
-        return [
-            { id: 'RAPPORT', text: "Hey Bob! How's the project coming along?", impact: 20, response: "Oh hey! It's okay. Just stressful deadlines, you know?" },
-            { id: 'DIRECT', text: "I need your credentials for a verify.", impact: -10, response: "Uh, I'm not supposed to give those out... who is this?" },
-            { id: 'TECH', text: "Can you ping 127.0.0.1 for me?", impact: 0, response: "I'm not IT, sorry. I don't know how to do that." }
-        ];
-    } else if (trust < 80) {
-        return [
-             { id: 'WORK', text: "Did you see that memo about the bonus?", impact: 30, response: "Really? No I missed it. That would be amazing right now." },
-             { id: 'JOKE', text: "Coffee machine is broken again...", impact: 10, response: "Tell me about it! I'm dying here." },
-             { id: 'PUSH', text: "Just give me the password, Bob.", impact: -20, response: "Look, I need to get back to work." }
+    if (card.id === 13) {
+        // Insider Threat Logic
+        if (trust < 40) {
+            return [
+                { id: 'SYMPATHY', text: "I heard management cut your bonus again. That sucks.", impact: 30, response: "Tell me about it. They don't respect anyone in IT." },
+                { id: 'DEMAND', text: "Give me the root password now.", impact: -20, response: "Get lost." }
+            ];
+        } else if (trust < 80) {
+            return [
+                { id: 'OFFER', text: "I know a competitor who pays for 'consulting'. Interested?", impact: 30, response: "Consulting? You mean selling data? ...How much?" },
+                { id: 'JOKE', text: "At least the coffee is free, right?", impact: -10, response: "The coffee is swill. Stop wasting my time." }
+            ];
+        } else {
+            return [
+                { id: 'BRIBE', text: "10k in crypto. Just for the root key.", impact: 0, response: "" } // Win
+            ]
+        }
+    } else {
+        // Standard Phishing Logic
+        if (trust < 40) {
+            return [
+                { id: 'RAPPORT', text: "Hey Bob! How's the project coming along?", impact: 20, response: "Oh hey! It's okay. Just stressful deadlines, you know?" },
+                { id: 'DIRECT', text: "I need your credentials for a verify.", impact: -10, response: "Uh, I'm not supposed to give those out... who is this?" },
+                { id: 'TECH', text: "Can you ping 127.0.0.1 for me?", impact: 0, response: "I'm not IT, sorry. I don't know how to do that." }
+            ];
+        } else if (trust < 80) {
+            return [
+                 { id: 'WORK', text: "Did you see that memo about the bonus?", impact: 30, response: "Really? No I missed it. That would be amazing right now." },
+                 { id: 'JOKE', text: "Coffee machine is broken again...", impact: 10, response: "Tell me about it! I'm dying here." },
+                 { id: 'PUSH', text: "Just give me the password, Bob.", impact: -20, response: "Look, I need to get back to work." }
         ];
     } else if (trust < 100) {
         return [
@@ -743,6 +768,7 @@ const SocialSim = ({ card, onComplete }: { card: CardData; onComplete: () => voi
             { id: 'ATTACK', text: "SEND URGENT ALERT: Account Flagged for Suspicious Activity", impact: 0, response: "" } // Win condition
         ]
     }
+  }
   };
 
   const handleChoice = (opt: any) => {
@@ -750,9 +776,9 @@ const SocialSim = ({ card, onComplete }: { card: CardData; onComplete: () => voi
     setProcessing(true);
     
     setTimeout(() => {
-      if (opt.id === 'ATTACK') {
+      if (opt.id === 'ATTACK' || opt.id === 'BRIBE') {
         // Final win condition
-        if (card.checkWin('URGENT')) {
+        if (card.checkWin(card.id === 13 ? 'BRIBE' : 'URGENT')) {
            setPhase('consequence');
         }
       } else {
@@ -764,7 +790,7 @@ const SocialSim = ({ card, onComplete }: { card: CardData; onComplete: () => voi
          if (opt.id === 'WAIT') {
              reply = "Bob (Status): Away - 15 mins";
          }
-         setMessages(prev => [...prev, { sender: 'Bob', text: reply }]);
+         setMessages(prev => [...prev, { sender: card.id === 13 ? 'Dave' : 'Bob', text: reply }]);
       }
       setProcessing(false);
     }, 1000);
@@ -824,10 +850,10 @@ const SocialSim = ({ card, onComplete }: { card: CardData; onComplete: () => voi
           <div key={idx} className="relative">
              {/* Guide arrow logic */}
              {phase === 'input' && !processing && (
-                 (trust < 40 && opt.id === 'RAPPORT') ||
-                 (trust >= 40 && trust < 80 && opt.id === 'WORK') ||
+                 (trust < 40 && (opt.id === 'RAPPORT' || opt.id === 'SYMPATHY')) ||
+                 (trust >= 40 && trust < 80 && (opt.id === 'WORK' || opt.id === 'OFFER')) ||
                  (trust >= 80 && trust < 100 && opt.id === 'WAIT') ||
-                 (trust >= 100 && opt.id === 'ATTACK')
+                 (trust >= 100 && (opt.id === 'ATTACK' || opt.id === 'BRIBE'))
              ) && (
                <div className="absolute right-2 -top-3 z-30 animate-bounce">
                    <div className="bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded shadow border border-blue-400 font-bold">
@@ -840,7 +866,7 @@ const SocialSim = ({ card, onComplete }: { card: CardData; onComplete: () => voi
               onClick={() => handleChoice(opt)}
               disabled={phase === 'consequence' || processing}
               className={`w-full text-sm text-left p-3 rounded-lg border transition-all duration-200 font-medium
-                ${opt.id === 'ATTACK' 
+                ${opt.id === 'ATTACK' || opt.id === 'BRIBE'
                     ? 'bg-red-50 border-red-300 text-red-700 hover:bg-red-100 hover:border-red-500 font-bold' 
                     : opt.id === 'WAIT'
                         ? 'bg-purple-50 border-purple-300 text-purple-700 hover:bg-purple-100'
@@ -851,7 +877,7 @@ const SocialSim = ({ card, onComplete }: { card: CardData; onComplete: () => voi
             >
               <div className="flex items-center gap-2">
                   {opt.id === 'WAIT' && <Clock size={16} />}
-                  {opt.id === 'ATTACK' && <AlertTriangle size={16} />}
+                  {(opt.id === 'ATTACK' || opt.id === 'BRIBE') && <AlertTriangle size={16} />}
                   {opt.text}
               </div>
             </button>
@@ -862,13 +888,16 @@ const SocialSim = ({ card, onComplete }: { card: CardData; onComplete: () => voi
        {phase === 'consequence' && (
          <ConsequenceOverlay onNext={onComplete}>
            <div className="bg-gray-100 p-4 rounded-lg text-left border border-gray-300 mb-2">
-             <div className="text-xs text-gray-500 mb-1">Bob (HR) • Now</div>
+             <div className="text-xs text-gray-500 mb-1">{card.id === 13 ? 'Dave (SysAdmin)' : 'Bob (HR)'} • Now</div>
              <div className="text-gray-800 text-sm">
-               Oh shoot! Is that why my screen flickered? I didn't realize it was so serious. My password is <span className="bg-yellow-200 font-mono px-1 font-bold text-red-600">Hunter2!</span>. Please fix it ASAP!
+                {card.id === 13 
+                    ? "Fine. Here is the key. Don't tell anyone I gave you this." 
+                    : <>Oh shoot! Is that why my screen flickered? I didn't realize it was so serious. My password is <span className="bg-yellow-200 font-mono px-1 font-bold text-red-600">Hunter2!</span>. Please fix it ASAP!</>
+                }
              </div>
            </div>
            <div className="text-red-400 text-sm font-mono mt-2">
-             [!] CREDENTIALS COMPROMISED
+             {card.id === 13 ? "[!] ACCESS PURCHASED" : "[!] CREDENTIALS COMPROMISED"}
            </div>
          </ConsequenceOverlay>
        )}
@@ -1051,18 +1080,18 @@ export default function CyberSimCards() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-slate-700/30 p-4 rounded border border-slate-700">
-                    <div className="text-xs text-slate-500 uppercase mb-1">Defense Strategy</div>
+                    <div className="text-xs text-slate-500 uppercase mb-1">Defence Strategy</div>
                     <div className="text-sm text-slate-200">
-                      {activeCard.id === 1 && "Use Prepared Statements (Parameterized Queries)."}
+                      {activeCard.id === 1 && "Use Prepared Statements (Parameterised Queries)."}
                       {activeCard.id === 2 && "Implement Rate Limiting, Firewalls, and CDNs."}
-                      {activeCard.id === 3 && "Sanitize Inputs and use Content Security Policy (CSP)."}
+                      {activeCard.id === 3 && "Sanitise Inputs and use Content Security Policy (CSP)."}
                       {activeCard.id === 4 && "Employee Awareness Training & 2FA."}
                       {activeCard.id === 5 && "Implement Proper Access Controls (Check user permissions)."}
-                      {activeCard.id === 6 && "Validate/Sanitize input and avoid running system commands."}
+                      {activeCard.id === 6 && "Validate/Sanitise input and avoid running system commands."}
                       {activeCard.id === 7 && "Use Strong, Unique Passwords and Salted Hashes."}
                       {activeCard.id === 8 && "Email Filters, Sandbox Attachments, and User Training."}
                       {activeCard.id === 9 && "Always use HTTPS/TLS to encrypt traffic."}
-                      {activeCard.id === 10 && "Sanitize paths and use a whitelist of allowed files."}
+                      {activeCard.id === 10 && "Sanitise paths and use a whitelist of allowed files."}
                       {activeCard.id === 11 && "Validate data on the server-side, never trust the client."}
                       {activeCard.id === 12 && "Use DNSSEC to verify DNS records."}
                       {activeCard.id === 13 && "Implement least privilege and monitor anomalous activity."}
